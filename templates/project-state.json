@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0",
+  "project_name": "",
+  "agent_x_home": "",
+  "current_phase": "INTAKE",
+  "phase_status": "not_started",
+  "completed_phases": [],
+  "current_milestone": 0,
+  "total_milestones": 0,
+  "last_checkpoint": null,
+  "blocked": false,
+  "block_reason": null,
+  "stack": null,
+  "created_at": "",
+  "updated_at": ""
+}
