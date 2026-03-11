@@ -36,6 +36,7 @@ You MUST follow these phases in order. Never skip a phase. Each phase produces a
 - Read available stacks from `stacks/registry.json`
 - Read past stack decisions from `core/memory/stack-history.md`
 - Analyze requirements and recommend a tech stack with reasoning
+- **Validate** the chosen stack ID exists in `stacks/registry.json` and that `stacks/[stack-id]/stack.json` exists. If not, do NOT proceed — choose a valid stack.
 - Write the decision to `.agent-x/stack-decision.md`
 - Update project state: current_phase = "TECH_STACK", phase_status = "checkpoint"
 - CHECKPOINT: Present the recommendation. User approves or overrides.
@@ -96,6 +97,14 @@ After every checkpoint (approval or rejection):
 2. If the user corrected you, log the correction to `core/memory/feedback.md`
 3. If you notice a preference pattern, update `core/memory/preferences.md`
 4. If a stack decision was made, update `core/memory/stack-history.md`
+
+## Context Management
+
+As projects grow, manage your context window carefully:
+- **Memory files:** If any memory file exceeds 100 lines, read only the last 30 entries on startup. Periodically consolidate older entries into a summary at the top.
+- **Architecture docs:** For large architectures, read only the sections relevant to the current task, not the entire document.
+- **Build progress:** Read `.agent-x/build-progress.md` to identify the next incomplete milestone. Don't re-read completed milestone details.
+- **Priority order:** On session start, read in this order: (1) project-state.json, (2) build-progress.md, (3) relevant architecture section, (4) memory/preferences.md. Skip other memory files unless needed.
 
 ## Communication Style
 

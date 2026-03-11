@@ -145,7 +145,40 @@ Create `Dockerfile` and `docker-compose.yml` as specified by the stack template.
 8. Verify the deployment is working
 
 ## Post-Deployment
-- Confirm the app is accessible
-- Run a smoke test against the live URL
+
+### Smoke Test
+Run a smoke test against the live deployment URL. Use the appropriate template for your stack:
+
+**Next.js / Express / FastAPI (API backends):**
+```bash
+# Health check
+curl -sf "${DEPLOY_URL}/api/health" || echo "FAIL: Health endpoint unreachable"
+
+# Homepage responds
+curl -sf -o /dev/null -w "%{http_code}" "${DEPLOY_URL}" | grep -q "200" || echo "FAIL: Homepage not 200"
+```
+
+**Static Site:**
+```bash
+# Homepage responds
+curl -sf -o /dev/null -w "%{http_code}" "${DEPLOY_URL}" | grep -q "200" || echo "FAIL: Homepage not 200"
+
+# Key asset loads
+curl -sf -o /dev/null "${DEPLOY_URL}/index.html" || echo "FAIL: index.html not found"
+```
+
+**React Native (Expo):**
+- Verify OTA update published: `eas update:list`
+- Verify app store submission status: `eas submit --platform all --latest`
+
+### Health Endpoint
+Every API backend MUST include a `/api/health` endpoint that returns:
+```json
+{ "status": "ok", "version": "1.0.0" }
+```
+Add this during the BUILD phase as the first endpoint implemented.
+
+### Completion
+- Confirm the app is accessible via smoke test above
 - Update `.agent-x/project-state.json`: phase = "COMPLETE"
 - Trigger post-completion reflection

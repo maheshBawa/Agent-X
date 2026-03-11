@@ -245,7 +245,7 @@ Each tech stack defines its tooling:
   "formatter": "prettier",
   "type_checker": "typescript",
   "test_runner": "vitest",
-  "security_scanner": "snyk",
+  "security_scanner": "npm audit",
   "min_coverage": 80,
   "complexity_threshold": 15,
   "license_policy": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC"],
