@@ -3,6 +3,7 @@
 set -euo pipefail
 
 AGENT_X_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+if python3 --version > /dev/null 2>&1; then PYTHON=python3; else PYTHON=python; fi
 PASS=0
 FAIL=0
 
@@ -21,14 +22,14 @@ assert() {
 echo "Testing stack registry..."
 
 # Test: Registry is valid JSON
-assert "registry.json is valid JSON" "$(python3 -m json.tool "$AGENT_X_HOME/stacks/registry.json" > /dev/null 2>&1 && echo true || echo false)"
+assert "registry.json is valid JSON" "$($PYTHON -m json.tool "$AGENT_X_HOME/stacks/registry.json" > /dev/null 2>&1 && echo true || echo false)"
 
 # Test: All stacks in registry have directories
 for stack in nextjs-postgres react-native-expo python-fastapi node-express-mongo static-site; do
   assert "Stack dir exists: $stack" "$([ -d "$AGENT_X_HOME/stacks/$stack" ] && echo true || echo false)"
   assert "stack.json exists: $stack" "$([ -f "$AGENT_X_HOME/stacks/$stack/stack.json" ] && echo true || echo false)"
   assert "template.md exists: $stack" "$([ -f "$AGENT_X_HOME/stacks/$stack/template.md" ] && echo true || echo false)"
-  assert "stack.json valid JSON: $stack" "$(python3 -m json.tool "$AGENT_X_HOME/stacks/$stack/stack.json" > /dev/null 2>&1 && echo true || echo false)"
+  assert "stack.json valid JSON: $stack" "$($PYTHON -m json.tool "$AGENT_X_HOME/stacks/$stack/stack.json" > /dev/null 2>&1 && echo true || echo false)"
 done
 
 echo ""
