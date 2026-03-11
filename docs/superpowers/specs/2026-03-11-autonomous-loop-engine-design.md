@@ -58,6 +58,60 @@ Each stage:
 
 The loop is re-entrant: VERIFY failures re-enter ASSESS with failure context. Max 3 retries per task before checkpointing to human.
 
+#### Loop State Persistence
+
+Loop state is persisted to `.agent-x/loop-state.json` so that sessions can resume mid-loop. The file is updated after every stage transition.
+
+```json
+{
+  "active": true,
+  "goal": "Build the auth system",
+  "current_stage": "EXECUTE",
+  "task_graph": {
+    "tasks": [
+      {
+        "id": "task-1",
+        "description": "Create user database schema",
+        "dependencies": [],
+        "acceptance_criteria": "Migration runs, table exists with correct columns",
+        "confidence": 92,
+        "status": "completed",
+        "retries": 0,
+        "approach_notes": null
+      },
+      {
+        "id": "task-2",
+        "description": "Implement auth service",
+        "dependencies": ["task-1"],
+        "acceptance_criteria": "Login/signup/logout work, tokens issued correctly",
+        "confidence": 85,
+        "status": "in_progress",
+        "retries": 0,
+        "approach_notes": null
+      }
+    ]
+  },
+  "total_actions_taken": 7,
+  "total_retries": 0,
+  "elapsed_minutes": 12,
+  "checkpoints_hit": ["architecture:api-shape"],
+  "started_at": "2026-03-11T10:00:00Z",
+  "updated_at": "2026-03-11T10:12:00Z"
+}
+```
+
+On session start, if `loop-state.json` exists with `"active": true`, the agent resumes from `current_stage` with the full task graph intact.
+
+#### Rollback Protocol
+
+Before each EXECUTE action, the agent creates a git checkpoint (lightweight commit or stash). If VERIFY fails:
+
+1. Revert to the pre-action checkpoint (`git stash` or `git checkout` the changed files)
+2. Re-enter ASSESS with failure context and the reverted codebase
+3. Retry with a modified approach (different strategy, not the same code again)
+
+This ensures retries start from a clean state, not a broken one.
+
 ### Checkpoint System
 
 Checkpoints are inflection points where the loop pauses for human input.
@@ -110,12 +164,15 @@ Properties of each task node:
 - **status** — pending | in_progress | completed | failed | checkpointed
 - **retries** — count of retry attempts (max 3)
 
+The task graph is serialized as JSON in `.agent-x/loop-state.json` (see Loop State Persistence above). Each task node follows the schema shown in that example.
+
 Execution rules:
-- Independent branches may execute concurrently (via background agents)
+- In v2.0, branches execute sequentially (depth-first through the DAG). Concurrent execution via parallel agents is a future optimization (see Future Extensions)
 - Blocked tasks wait for dependencies
-- Failed tasks retry once with a modified approach
+- Failed tasks retry up to 3 times, each retry using a modified approach (different strategy, not the same code). The agent must document what changed in `approach_notes`
 - After 3 failures, task status becomes "checkpointed" and loop pauses for human
 - Task completion triggers dependency resolution — unblocked tasks start automatically
+- **Max 20 tasks per autonomous run.** If goal decomposition produces more than 20 tasks, the agent checkpoints to the human with the proposed graph for approval before proceeding
 
 ### Trigger Framework
 
@@ -128,7 +185,34 @@ Execution rules:
 | Cron Watch | Claude Code cron | Periodic: dependency audit, coverage check, security scan |
 | External Event | CLI/hook trigger | CI failure, PR review request, new GitHub issue |
 
-Cron triggers run at configurable intervals and produce status reports. If issues are found, they enter the loop as triggers.
+Cron triggers are configured in `.agent-x/cron-config.json`:
+
+```json
+{
+  "health_checks": [
+    {
+      "name": "dependency-audit",
+      "interval_minutes": 1440,
+      "command": "npm audit / pip-audit",
+      "description": "Check for known vulnerabilities in dependencies"
+    },
+    {
+      "name": "coverage-check",
+      "interval_minutes": 60,
+      "command": "run test suite with coverage",
+      "description": "Verify test coverage hasn't dropped below threshold"
+    },
+    {
+      "name": "security-scan",
+      "interval_minutes": 1440,
+      "command": "run Gate 4 SAST checks",
+      "description": "Proactive security scan for OWASP patterns"
+    }
+  ]
+}
+```
+
+Default intervals: security/dependency scans daily (1440 min), coverage checks hourly (60 min). Users can override in the config file. Cron output is a status report written to `.agent-x/cron-reports/YYYY-MM-DD-<check-name>.md`. If issues are found, they enter the loop as triggers.
 
 ### Memory Integration (Feedback Loop)
 
@@ -144,6 +228,16 @@ The LEARN stage executes after every loop completion (not just after projects):
 
 Memory is read during ASSESS to inform confidence scoring. Over time, the agent's decisions improve because confidence is calibrated by real outcomes.
 
+#### Memory Validation Rules
+
+Before writing to memory, the LEARN stage validates:
+
+1. **Deduplication** — check if a similar pattern/decision already exists. If so, update the existing entry rather than creating a duplicate
+2. **Conflict detection** — if a new insight contradicts an existing memory entry, flag both and checkpoint to human for resolution
+3. **Source attribution** — every memory entry includes the loop ID, date, and confidence score that produced it
+4. **Staleness marking** — if a user correction invalidates a memory entry, mark it as `[SUPERSEDED by correction on YYYY-MM-DD]` rather than deleting (preserves audit trail)
+5. **Max entry size** — individual memory entries should be concise (under 200 words). Detailed context belongs in the spec/architecture docs, not memory
+
 ### Integration With Existing Systems
 
 | Existing System | Integration Point |
@@ -154,7 +248,17 @@ Memory is read during ASSESS to inform confidence scoring. Over time, the agent'
 | Memory System | LEARN stage feeds memory continuously, not just at project end |
 | Evolution Engine | Reflection triggers fire after loop completions, not just project completions |
 | Tech Stack Engine | Stack configs inform confidence (familiar stack = higher base confidence) |
-| Profile System | User risk tolerance from `profiles/default.json` adjusts checkpoint sensitivity |
+| Profile System | User risk tolerance from `profiles/default.json` adjusts checkpoint sensitivity (see mapping below) |
+
+#### Risk Tolerance → Checkpoint Sensitivity Mapping
+
+The `risk_tolerance` field in `profiles/default.json` adjusts how aggressively the loop checkpoints:
+
+| Risk Tolerance | Confidence Checkpoint Threshold | Additional Behavior |
+|---------------|-------------------------------|---------------------|
+| `low` | 60% (more cautious) | Also checkpoints on any file deletion, CI config changes, and multi-service changes |
+| `medium` | 50% (default) | Standard checkpoint rules as defined above |
+| `high` | 40% (more autonomous) | Only mandatory checkpoints (architecture, deploy, breaking) — confidence checkpoints relaxed |
 
 ### Safety Constraints (Immutable)
 
@@ -163,11 +267,14 @@ Memory is read during ASSESS to inform confidence scoring. Over time, the agent'
 3. No self-merging — PRs always require human approval
 4. No deploy without explicit human approval — even in autonomous mode
 5. Confidence scoring is honest — no score inflation to avoid checkpoints
-6. Max loop depth of 3 retries per task — prevents infinite self-heal spirals
-7. All autonomous actions are logged — full transparency, reviewable
-8. Human interrupt honored immediately — "stop" kills the loop
-9. Existing TDD requirement unchanged — tests before implementation
-10. No secret commits — Gate 3 remains enforced in all modes
+6. Structural mandatory checkpoints — regardless of confidence score, these actions ALWAYS checkpoint: file deletion, CI/CD config changes, security-related code (auth, crypto, permissions), and database migrations
+7. Max loop depth of 3 retries per task — prevents infinite self-heal spirals
+8. Max 20 tasks per autonomous run — prevents unbounded goal decomposition
+9. Max 60 minutes per autonomous run — if elapsed time exceeds this, checkpoint with progress report
+10. All autonomous actions are logged — full transparency, reviewable
+11. Human interrupt honored immediately — "stop" kills the loop
+12. Existing TDD requirement unchanged — tests before implementation
+13. No secret commits — Gate 3 remains enforced in all modes
 
 ## File Structure
 
@@ -181,6 +288,11 @@ core/autonomy/
 ├── triggers.md          # Trigger types and activation methods
 ├── task-graph.md        # Task DAG structure and execution rules
 └── feedback.md          # LEARN stage — memory integration protocol
+
+# Per-project runtime files (created by the loop, not shipped):
+.agent-x/loop-state.json          # Persisted loop state for session resume
+.agent-x/cron-config.json         # Cron trigger configuration
+.agent-x/cron-reports/            # Cron health check output
 ```
 
 Modified files:
@@ -190,6 +302,7 @@ CLAUDE.md                      # Add autonomous mode directives and loop protoco
 AGENTS.md                      # Add loop-awareness to each agent role
 templates/project-claude.md    # Propagate autonomous directives to new projects
 templates/project-agents.md    # Propagate loop-awareness to new projects
+templates/project-state.json   # Add loop-state fields
 core/evolution/changelog.md    # Log v2.0 changes
 VERSION                        # Bump to 2.0.0
 ```
@@ -208,27 +321,35 @@ VERSION                        # Bump to 2.0.0
 
 ## Testing Strategy
 
-- Unit tests for each consciousness document (validate rules are followed in simulated scenarios)
-- Integration test: give a multi-step goal, verify autonomous chaining with correct checkpoints
-- Regression: all 79 existing tests pass
-- Safety test: verify checkpoints fire correctly (architecture decision, low confidence, deploy)
-- Self-heal test: introduce a failing test, verify loop retries and fixes
-- Memory test: verify LEARN stage updates correct memory files
-- Interrupt test: verify "stop" halts the loop mid-execution
+Consciousness documents (Markdown) cannot be unit-tested traditionally. Tests are **behavioral** — give the agent a scenario, verify it follows the rules. Test scripts simulate scenarios via controlled inputs and check outputs/state.
+
+- **Behavioral tests for consciousness documents:** Create test scenarios (e.g., "given a 5-task goal with one ambiguous requirement, verify the agent checkpoints at the ambiguous task"). Validate by checking loop-state.json and action logs after execution
+- **State persistence tests:** Start a loop, kill the session mid-task, resume — verify loop-state.json restores correctly and the agent continues from the right point
+- **Checkpoint trigger tests:** Simulate each checkpoint type (architecture decision, low confidence, deploy, breaking change, structural mandatory) and verify the loop pauses with appropriate context
+- **Self-heal tests:** Introduce a failing test, verify the loop retries with a modified approach and reverts before each retry
+- **Resource guardrail tests:** Create a goal that decomposes into 25+ tasks, verify it checkpoints at 20. Run a loop for 60+ simulated minutes, verify it checkpoints with progress report
+- **Memory integration tests:** Run a loop to completion, verify LEARN stage wrote to correct memory files with proper validation (no duplicates, conflict detection working)
+- **Rollback tests:** Verify git checkpoint creation before EXECUTE, and clean revert on failure
+- **Regression:** All 79 existing tests continue to pass
+- **Interrupt test:** Verify "stop" halts the loop mid-execution and persists state
 
 ## Risk Mitigation
 
 | Risk | Mitigation |
 |------|-----------|
-| Infinite loop / runaway autonomy | Max 3 retries per task, max loop depth, logged actions |
+| Infinite loop / runaway autonomy | Max 3 retries per task, max 20 tasks per run, max 60 min per run, logged actions |
 | Wrong architectural decision made autonomously | Architecture checkpoint is mandatory — always pauses |
-| Confidence score gaming | Calibration via user corrections, honest scoring is an immutable constraint |
-| Memory pollution (bad patterns saved) | LEARN validates against existing memory, user corrections override |
+| Confidence score gaming | Calibration via user corrections + structural mandatory checkpoints that bypass confidence entirely |
+| Memory pollution (bad patterns saved) | LEARN validates: deduplication, conflict detection, source attribution, staleness marking |
 | Loss of human control | Interrupt always honored, checkpoints cannot be disabled, no self-merge |
+| Broken state from failed retries | Rollback protocol: git checkpoint before each action, revert before retry |
+| Unbounded resource consumption | 60-minute time cap + 20-task cap + logged elapsed time in loop-state.json |
+| Session crash mid-loop | loop-state.json persisted after every stage transition, resume on session start |
 
 ## Future Extensions (Not In Scope)
 
 - MCP server integrations (GitHub, Slack, cloud APIs) — adds reach to the loop
-- Multi-agent parallel orchestration — multiple loops coordinated
+- Multi-agent parallel orchestration — concurrent DAG branch execution via coordinated background agents
 - Voice/notification interface — JARVIS-style spoken status updates
 - Cross-project learning — memory shared between projects (with user consent)
+- Token budget tracking — monitor API token consumption per autonomous run
