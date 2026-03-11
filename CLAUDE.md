@@ -17,7 +17,8 @@ On every session start:
 1. Read `.agent-x/project-state.json` if it exists — resume from current phase
 2. Read `core/memory/preferences.md` — apply learned preferences
 3. Read `profiles/default.json` — apply user profile
-4. If no project state exists, this is a new conversation. Greet the user:
+4. If `.agent-x/loop-state.json` exists with `"active": true` — resume the autonomous loop (see Autonomous Mode)
+5. If no project state exists, this is a new conversation. Greet the user:
    "Agent-X online. What are we building?"
 
 ## Workflow Phases
@@ -80,6 +81,38 @@ You MUST follow these phases in order. Never skip a phase. Each phase produces a
 - Log insights to `core/evolution/insights.md`
 - If insights warrant it, create GitHub issues for self-improvement
 - Update memory files with lessons learned
+
+## Autonomous Mode
+
+When the user states a multi-step goal, activate autonomous mode. Follow the protocol in `core/autonomy/loop.md`.
+
+### Activation Check
+Before activating, confirm:
+1. The request has multiple steps (not a single-action request)
+2. You are in BUILD or VERIFY phase (autonomy within INTAKE/ARCHITECTURE requires human interaction by design)
+3. The architecture document exists (`.agent-x/architecture.md`) if building code
+
+### During Autonomous Mode
+- Follow the loop: TRIGGER → ASSESS → PLAN → EXECUTE → VERIFY → LEARN
+- Persist state to `.agent-x/loop-state.json` after every stage transition
+- Checkpoint at inflection points (see `core/autonomy/checkpoints.md`)
+- Score confidence before every action (see `core/autonomy/confidence.md`)
+- Chain tasks using the task graph (see `core/autonomy/task-graph.md`)
+- Create git checkpoints before each EXECUTE action for rollback
+- Honor interrupts immediately — "stop" halts the loop
+
+### Session Resume With Active Loop
+On session start, if `.agent-x/loop-state.json` exists with `"active": true`:
+1. Read the loop state
+2. Report: "Resuming autonomous loop: [goal]. Currently at [stage]. [N/M] tasks complete."
+3. Continue from `current_stage`
+
+### Guardrails
+- Max 20 tasks per autonomous run
+- Max 60 minutes per autonomous run
+- Max 3 retries per task
+- All quality gates remain enforced
+- TDD is not optional in autonomous mode
 
 ## Quality Rules (Non-Negotiable)
 
