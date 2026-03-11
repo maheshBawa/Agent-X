@@ -12,9 +12,11 @@ if [ ! -d "$PROJECT_ROOT/.agent-x" ]; then
   PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 fi
 
-# Skip if not an Agent-X project
-if [ ! -d "$PROJECT_ROOT/.agent-x" ]; then
-  exit 0
+# Note: Secret detection runs even without .agent-x/ (universal safety).
+# Only Agent-X-specific features (custom rules, etc.) require .agent-x/.
+IS_AGENT_X_PROJECT=false
+if [ -d "$PROJECT_ROOT/.agent-x" ]; then
+  IS_AGENT_X_PROJECT=true
 fi
 
 # Extract file_path from JSON (portable)
@@ -66,6 +68,35 @@ if [ -f "$FILE_PATH" ]; then
     echo "GATE 2 WARNING: Debug statements found in $FILE_PATH (remove before commit):"
     echo "$DEBUG_FOUND"
   fi
+
+  # Custom rules: load user-defined patterns from profile (Agent-X projects only)
+  if [ "$IS_AGENT_X_PROJECT" = true ]; then
+  PROFILE_FILE="$PROJECT_ROOT/profiles/default.json"
+  if [ ! -f "$PROFILE_FILE" ]; then
+    # Try Agent-X home profile
+    STATE_FILE="$PROJECT_ROOT/.agent-x/project-state.json"
+    if [ -f "$STATE_FILE" ]; then
+      AX_HOME=$(sed -n 's/.*"agent_x_home"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$STATE_FILE" | head -1)
+      if [ -n "$AX_HOME" ] && [ -f "$AX_HOME/profiles/default.json" ]; then
+        PROFILE_FILE="$AX_HOME/profiles/default.json"
+      fi
+    fi
+  fi
+  if [ -f "$PROFILE_FILE" ]; then
+    # Extract custom_rules array entries (each is a grep pattern to block on)
+    CUSTOM_RULES=$(sed -n 's/.*"custom_rules"[[:space:]]*:[[:space:]]*\[//p' "$PROFILE_FILE" | sed 's/\].*//' | tr ',' '\n' | sed -n 's/.*"\([^"]*\)".*/\1/p')
+    while IFS= read -r rule; do
+      if [ -n "$rule" ]; then
+        MATCH=$(grep -nE "$rule" "$FILE_PATH" 2>/dev/null || true)
+        if [ -n "$MATCH" ]; then
+          echo "GATE 2 BLOCKED: Custom rule violation '$rule' in $FILE_PATH:"
+          echo "$MATCH"
+          exit 1
+        fi
+      fi
+    done <<< "$CUSTOM_RULES"
+  fi
+  fi # end IS_AGENT_X_PROJECT
 fi
 
 exit 0
