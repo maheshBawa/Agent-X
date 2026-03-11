@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# Agent-X CLI
+# Usage: agent-x <command> [args]
+set -euo pipefail
+
+AGENT_X_HOME="$(cd "$(dirname "$0")" && pwd)"
+COMMAND="${1:-help}"
+PROJECT_DIR="$(pwd)"
+
+case "$COMMAND" in
+  init)
+    echo "Initializing Agent-X in: $PROJECT_DIR"
+
+    # Create .agent-x directory
+    mkdir -p "$PROJECT_DIR/.agent-x"
+
+    # Copy project state template
+    cp "$AGENT_X_HOME/templates/project-state.json" "$PROJECT_DIR/.agent-x/project-state.json"
+
+    # Update state with project info (portable: write via temp file, no sed -i)
+    TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    PROJECT_NAME=$(basename "$PROJECT_DIR")
+    STATE_FILE="$PROJECT_DIR/.agent-x/project-state.json"
+
+    sed \
+      -e "s|\"project_name\": \"\"|\"project_name\": \"$PROJECT_NAME\"|" \
+      -e "s|\"agent_x_home\": \"\"|\"agent_x_home\": \"$AGENT_X_HOME\"|" \
+      -e "s|\"created_at\": \"\"|\"created_at\": \"$TIMESTAMP\"|" \
+      -e "s|\"updated_at\": \"\"|\"updated_at\": \"$TIMESTAMP\"|" \
+      "$STATE_FILE" > "$STATE_FILE.tmp" && mv "$STATE_FILE.tmp" "$STATE_FILE"
+
+    # Copy CLAUDE.md template and replace placeholders
+    sed "s|{{AGENT_X_HOME}}|$AGENT_X_HOME|g" "$AGENT_X_HOME/templates/project-claude.md" > "$PROJECT_DIR/CLAUDE.md"
+
+    # Copy AGENTS.md template
+    sed "s|{{AGENT_X_HOME}}|$AGENT_X_HOME|g" "$AGENT_X_HOME/templates/project-agents.md" > "$PROJECT_DIR/AGENTS.md"
+
+    # Copy hooks
+    mkdir -p "$PROJECT_DIR/.claude/hooks"
+    cp "$AGENT_X_HOME/.claude/hooks/"*.sh "$PROJECT_DIR/.claude/hooks/" 2>/dev/null || true
+    chmod +x "$PROJECT_DIR/.claude/hooks/"*.sh 2>/dev/null || true
+
+    # Copy settings
+    cp "$AGENT_X_HOME/.claude/settings.json" "$PROJECT_DIR/.claude/settings.json"
+
+    # Initialize git if needed
+    if [ ! -d "$PROJECT_DIR/.git" ]; then
+      cd "$PROJECT_DIR" && git init
+    fi
+
+    # Create .gitignore if it doesn't exist
+    if [ ! -f "$PROJECT_DIR/.gitignore" ]; then
+      cat > "$PROJECT_DIR/.gitignore" << 'GITIGNORE'
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+venv/
+__pycache__/
+
+# Build
+.next/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+GITIGNORE
+    fi
+
+    echo ""
+    echo "============================================"
+    echo "  Agent-X initialized: $PROJECT_NAME"
+    echo "============================================"
+    echo ""
+    echo "Run 'claude' to start. Agent-X will take over."
+    ;;
+
+  status)
+    STATE_FILE="$PROJECT_DIR/.agent-x/project-state.json"
+    if [ -f "$STATE_FILE" ]; then
+      echo "Agent-X Project Status:"
+      cat "$STATE_FILE"
+    else
+      echo "No Agent-X project found in current directory."
+      echo "Run 'agent-x init' to initialize."
+    fi
+    ;;
+
+  version)
+    echo "Agent-X v1.0.0"
+    ;;
+
+  help|*)
+    echo "Agent-X — Autonomous AI Development Environment"
+    echo ""
+    echo "Usage: agent-x <command>"
+    echo ""
+    echo "Commands:"
+    echo "  init      Initialize Agent-X in the current directory"
+    echo "  status    Show project status"
+    echo "  version   Show Agent-X version"
+    echo "  help      Show this help message"
+    echo ""
+    echo "After init, run 'claude' to start building."
+    ;;
+esac
