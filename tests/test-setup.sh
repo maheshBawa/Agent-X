@@ -3,6 +3,7 @@
 set -euo pipefail
 
 AGENT_X_HOME="$(cd "$(dirname "$0")/.." && pwd)"
+if python3 --version > /dev/null 2>&1; then PYTHON=python3; else PYTHON=python; fi
 PASS=0
 FAIL=0
 
@@ -46,7 +47,7 @@ assert "core/evolution/ exists" "$([ -d "$AGENT_X_HOME/core/evolution" ] && echo
 
 # Test: Stacks exist
 assert "stacks/registry.json exists" "$([ -f "$AGENT_X_HOME/stacks/registry.json" ] && echo true || echo false)"
-assert "stacks/registry.json is valid JSON" "$(python3 -m json.tool "$AGENT_X_HOME/stacks/registry.json" > /dev/null 2>&1 && echo true || echo false)"
+assert "stacks/registry.json is valid JSON" "$($PYTHON -m json.tool "$AGENT_X_HOME/stacks/registry.json" > /dev/null 2>&1 && echo true || echo false)"
 
 # Test: Profile exists
 assert "profiles/default.json exists" "$([ -f "$AGENT_X_HOME/profiles/default.json" ] && echo true || echo false)"
