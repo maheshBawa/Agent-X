@@ -95,6 +95,27 @@ GITIGNORE
     echo "Run 'claude' to start. Agent-X will take over."
     ;;
 
+  reset)
+    STATE_FILE="$PROJECT_DIR/.agent-x/project-state.json"
+    TARGET_PHASE="${2:-INTAKE}"
+    if [ ! -f "$STATE_FILE" ]; then
+      echo "No Agent-X project found. Run 'agent-x init' first."
+      exit 1
+    fi
+    # Validate phase
+    case "$TARGET_PHASE" in
+      INTAKE|TECH_STACK|ARCHITECTURE|BUILD|VERIFY|DEPLOY) ;;
+      *) echo "Invalid phase: $TARGET_PHASE"; echo "Valid phases: INTAKE, TECH_STACK, ARCHITECTURE, BUILD, VERIFY, DEPLOY"; exit 1 ;;
+    esac
+    # Update state file
+    sed \
+      -e "s|\"current_phase\": \"[^\"]*\"|\"current_phase\": \"$TARGET_PHASE\"|" \
+      -e "s|\"phase_status\": \"[^\"]*\"|\"phase_status\": \"not_started\"|" \
+      "$STATE_FILE" > "$STATE_FILE.tmp" && mv "$STATE_FILE.tmp" "$STATE_FILE"
+    echo "Agent-X reset to phase: $TARGET_PHASE"
+    echo "Run 'claude' to continue from this phase."
+    ;;
+
   status)
     STATE_FILE="$PROJECT_DIR/.agent-x/project-state.json"
     if [ -f "$STATE_FILE" ]; then
@@ -107,7 +128,8 @@ GITIGNORE
     ;;
 
   version)
-    echo "Agent-X v1.0.0"
+    VERSION=$(cat "$AGENT_X_HOME/VERSION" 2>/dev/null || echo "unknown")
+    echo "Agent-X v$VERSION"
     ;;
 
   help|*)
@@ -116,10 +138,11 @@ GITIGNORE
     echo "Usage: agent-x <command>"
     echo ""
     echo "Commands:"
-    echo "  init      Initialize Agent-X in the current directory"
-    echo "  status    Show project status"
-    echo "  version   Show Agent-X version"
-    echo "  help      Show this help message"
+    echo "  init              Initialize Agent-X in the current directory"
+    echo "  status            Show project status"
+    echo "  reset [PHASE]     Reset project to a specific phase (default: INTAKE)"
+    echo "  version           Show Agent-X version"
+    echo "  help              Show this help message"
     echo ""
     echo "After init, run 'claude' to start building."
     ;;

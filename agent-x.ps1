@@ -84,6 +84,27 @@ Thumbs.db
         Write-Host "Run 'claude' to start. Agent-X will take over."
     }
 
+    "reset" {
+        $stateFile = "$ProjectDir\.agent-x\project-state.json"
+        $targetPhase = if ($args.Count -gt 0) { $args[0] } else { "INTAKE" }
+        $validPhases = @("INTAKE", "TECH_STACK", "ARCHITECTURE", "BUILD", "VERIFY", "DEPLOY")
+        if (-not (Test-Path $stateFile)) {
+            Write-Host "No Agent-X project found. Run 'agent-x init' first."
+            exit 1
+        }
+        if ($targetPhase -notin $validPhases) {
+            Write-Host "Invalid phase: $targetPhase"
+            Write-Host "Valid phases: $($validPhases -join ', ')"
+            exit 1
+        }
+        $state = Get-Content $stateFile | ConvertFrom-Json
+        $state.current_phase = $targetPhase
+        $state.phase_status = "not_started"
+        $state | ConvertTo-Json -Depth 3 | Set-Content $stateFile
+        Write-Host "Agent-X reset to phase: $targetPhase"
+        Write-Host "Run 'claude' to continue from this phase."
+    }
+
     "status" {
         $stateFile = "$ProjectDir\.agent-x\project-state.json"
         if (Test-Path $stateFile) {
@@ -96,7 +117,9 @@ Thumbs.db
     }
 
     "version" {
-        Write-Host "Agent-X v1.0.0"
+        $Version = Get-Content "$AgentXHome\VERSION" -ErrorAction SilentlyContinue
+        if (-not $Version) { $Version = "unknown" }
+        Write-Host "Agent-X v$($Version.Trim())"
     }
 
     default {
@@ -105,10 +128,11 @@ Thumbs.db
         Write-Host "Usage: agent-x <command>"
         Write-Host ""
         Write-Host "Commands:"
-        Write-Host "  init      Initialize Agent-X in the current directory"
-        Write-Host "  status    Show project status"
-        Write-Host "  version   Show Agent-X version"
-        Write-Host "  help      Show this help message"
+        Write-Host "  init              Initialize Agent-X in the current directory"
+        Write-Host "  status            Show project status"
+        Write-Host "  reset [PHASE]     Reset project to a specific phase (default: INTAKE)"
+        Write-Host "  version           Show Agent-X version"
+        Write-Host "  help              Show this help message"
         Write-Host ""
         Write-Host "After init, run 'claude' to start building."
     }

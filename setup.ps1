@@ -29,6 +29,13 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
     exit 1
 }
 
+if (Get-Command bash -ErrorAction SilentlyContinue) {
+    Write-Host "  ✓ bash found (required for quality hooks)" -ForegroundColor Green
+} else {
+    Write-Host "WARNING: bash not found. Quality gate hooks require bash (Git Bash or WSL)." -ForegroundColor Yellow
+    Write-Host "  Install Git for Windows (includes Git Bash) to enable quality gates."
+}
+
 if (Get-Command node -ErrorAction SilentlyContinue) {
     $nodeVersion = node --version
     Write-Host "  ✓ Node.js found ($nodeVersion)" -ForegroundColor Green
