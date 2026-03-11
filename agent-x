@@ -29,10 +29,18 @@ case "$COMMAND" in
       -e "s|\"updated_at\": \"\"|\"updated_at\": \"$TIMESTAMP\"|" \
       "$STATE_FILE" > "$STATE_FILE.tmp" && mv "$STATE_FILE.tmp" "$STATE_FILE"
 
-    # Copy CLAUDE.md template and replace placeholders
+    # Copy CLAUDE.md template (back up existing if present)
+    if [ -f "$PROJECT_DIR/CLAUDE.md" ]; then
+      cp "$PROJECT_DIR/CLAUDE.md" "$PROJECT_DIR/CLAUDE.md.backup"
+      echo "  Existing CLAUDE.md backed up to CLAUDE.md.backup"
+    fi
     sed "s|{{AGENT_X_HOME}}|$AGENT_X_HOME|g" "$AGENT_X_HOME/templates/project-claude.md" > "$PROJECT_DIR/CLAUDE.md"
 
-    # Copy AGENTS.md template
+    # Copy AGENTS.md template (back up existing if present)
+    if [ -f "$PROJECT_DIR/AGENTS.md" ]; then
+      cp "$PROJECT_DIR/AGENTS.md" "$PROJECT_DIR/AGENTS.md.backup"
+      echo "  Existing AGENTS.md backed up to AGENTS.md.backup"
+    fi
     sed "s|{{AGENT_X_HOME}}|$AGENT_X_HOME|g" "$AGENT_X_HOME/templates/project-agents.md" > "$PROJECT_DIR/AGENTS.md"
 
     # Copy hooks
@@ -73,6 +81,9 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Agent-X sensitive files
+.agent-x/security-exceptions.md
 GITIGNORE
     fi
 

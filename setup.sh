@@ -78,24 +78,31 @@ if [ -f "$PROFILE_FILE" ]; then
     read -p "  Preferred languages (comma-separated, e.g., TypeScript,Python): " USER_LANGS
     read -p "  Design taste (e.g., minimal, modern, corporate): " USER_TASTE
 
-    LANGS_JSON=$(echo "$USER_LANGS" | sed 's/,/","/g' | sed 's/^/["/;s/$/"]/')
     TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-    cat > "$PROFILE_FILE" << PROFILE
-{
-  "version": "1.0.0",
-  "name": "$USER_NAME",
-  "preferred_languages": $LANGS_JSON,
-  "design_taste": "$USER_TASTE",
-  "communication_style": "concise, technical",
-  "risk_tolerance": "low",
-  "default_cloud": null,
-  "auto_deploy": false,
-  "custom_rules": [],
-  "created_at": "$TIMESTAMP",
-  "updated_at": "$TIMESTAMP"
+    # Use Python for safe JSON construction (avoids injection from special characters)
+    if python3 --version > /dev/null 2>&1; then PY=python3; else PY=python; fi
+    $PY -c "
+import json, sys
+name = sys.argv[1]
+langs = [l.strip() for l in sys.argv[2].split(',') if l.strip()]
+taste = sys.argv[3]
+ts = sys.argv[4]
+profile = {
+    'version': '1.0.0',
+    'name': name,
+    'preferred_languages': langs,
+    'design_taste': taste,
+    'communication_style': 'concise, technical',
+    'risk_tolerance': 'low',
+    'default_cloud': None,
+    'auto_deploy': False,
+    'custom_rules': [],
+    'created_at': ts,
+    'updated_at': ts
 }
-PROFILE
+print(json.dumps(profile, indent=2))
+" "$USER_NAME" "$USER_LANGS" "$USER_TASTE" "$TIMESTAMP" > "$PROFILE_FILE"
     echo "  ✓ Profile created"
   else
     echo "  ✓ Profile exists (welcome back, $NAME)"

@@ -55,10 +55,12 @@ You MUST follow these phases in order. Never skip a phase. Each phase produces a
 - Implement features using TDD (write test first, then implementation)
 - Quality gates run automatically via hooks — you cannot bypass them
 - Update project state: current_phase = "BUILD", phase_status = "in_progress"
+- **Milestone tracking:** Maintain `.agent-x/build-progress.md` with a checklist of features/milestones. Mark each complete. Update `current_milestone` and `total_milestones` in project-state.json. This enables reliable session resume.
+- Run `bash .claude/hooks/run-quality.sh` at each milestone boundary for stack-specific quality checks
 - CHECKPOINT: Pause at each major milestone for user review
 
 ### Phase 5: VERIFY
-- Run the full quality verification using `core/quality/gate4-pre-deploy.md`
+- **MANDATORY:** Run `bash .claude/hooks/pre-deploy.sh` — this is Gate 4 and it is NOT auto-triggered by hooks. You MUST run it explicitly.
 - This includes: SAST scan, test coverage, secret scanning, dependency audit
 - If ANYTHING fails: diagnose, fix, re-run. Max 3 attempts per issue.
 - After 3 failed attempts: escalate to user with detailed report
@@ -81,7 +83,7 @@ You MUST follow these phases in order. Never skip a phase. Each phase produces a
 ## Quality Rules (Non-Negotiable)
 
 1. NEVER skip quality gates. They are enforced by hooks, but you must also self-enforce.
-2. NEVER commit code without tests.
+2. NEVER commit code without tests. (Exception: static site stacks use E2E tests via Playwright instead of unit tests.)
 3. NEVER hardcode secrets, credentials, or environment-specific values.
 4. NEVER ship code with known security vulnerabilities.
 5. NEVER reduce test coverage below the configured minimum.

@@ -50,6 +50,82 @@ jobs:
       # Deploy steps depend on platform
 ```
 
+### Python FastAPI CI/CD
+Create `.github/workflows/ci.yml`:
+```yaml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Run linter
+        run: ruff check .
+      - name: Run type check
+        run: mypy .
+      - name: Run tests
+        run: pytest --cov --cov-fail-under=80
+      - name: Security audit
+        run: pip-audit -r requirements.txt
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      # Deploy steps depend on platform (Docker, Railway, etc.)
+```
+
+### Static Site CI/CD
+Create `.github/workflows/ci.yml`:
+```yaml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run formatter check
+        run: npx prettier --check .
+      - name: Run E2E tests
+        run: npx playwright test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      # Deploy to Vercel, Netlify, or GitHub Pages
+```
+
 ### Vercel (for Next.js and static sites)
 - Connect GitHub repo to Vercel
 - Set environment variables in Vercel dashboard

@@ -28,12 +28,20 @@ switch ($Command) {
         $state.updated_at = $timestamp
         $state | ConvertTo-Json -Depth 3 | Set-Content "$ProjectDir\.agent-x\project-state.json"
 
-        # Copy CLAUDE.md template
+        # Copy CLAUDE.md template (back up existing if present)
+        if (Test-Path "$ProjectDir\CLAUDE.md") {
+            Copy-Item "$ProjectDir\CLAUDE.md" "$ProjectDir\CLAUDE.md.backup"
+            Write-Host "  Existing CLAUDE.md backed up to CLAUDE.md.backup"
+        }
         $claudeContent = Get-Content "$AgentXHome\templates\project-claude.md" -Raw
         $claudeContent = $claudeContent.Replace('{{AGENT_X_HOME}}', $AgentXHome.Replace('\', '/'))
         Set-Content "$ProjectDir\CLAUDE.md" $claudeContent
 
-        # Copy AGENTS.md template
+        # Copy AGENTS.md template (back up existing if present)
+        if (Test-Path "$ProjectDir\AGENTS.md") {
+            Copy-Item "$ProjectDir\AGENTS.md" "$ProjectDir\AGENTS.md.backup"
+            Write-Host "  Existing AGENTS.md backed up to AGENTS.md.backup"
+        }
         $agentsContent = Get-Content "$AgentXHome\templates\project-agents.md" -Raw
         $agentsContent = $agentsContent.Replace('{{AGENT_X_HOME}}', $AgentXHome.Replace('\', '/'))
         Set-Content "$ProjectDir\AGENTS.md" $agentsContent
@@ -64,6 +72,7 @@ build/
 .idea/
 .DS_Store
 Thumbs.db
+.agent-x/security-exceptions.md
 "@ | Set-Content "$ProjectDir\.gitignore"
         }
 
