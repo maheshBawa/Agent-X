@@ -1,0 +1,73 @@
+{
+  "version": "1.0.0",
+  "stacks": [
+    {
+      "id": "nextjs-postgres",
+      "name": "Next.js + PostgreSQL",
+      "description": "Full-stack web application with server-side rendering, API routes, and relational database",
+      "best_for": ["SaaS apps", "web platforms", "content-heavy sites", "dashboards", "e-commerce"],
+      "languages": ["TypeScript", "JavaScript"],
+      "frontend": "Next.js (React)",
+      "backend": "Next.js API Routes / Server Actions",
+      "database": "PostgreSQL",
+      "orm": "Prisma",
+      "deployment": ["Vercel", "AWS", "Docker"],
+      "scales_to": "high",
+      "complexity": "medium"
+    },
+    {
+      "id": "react-native-expo",
+      "name": "React Native + Expo",
+      "description": "Cross-platform mobile application for iOS and Android",
+      "best_for": ["mobile apps", "cross-platform apps", "consumer apps"],
+      "languages": ["TypeScript", "JavaScript"],
+      "frontend": "React Native with Expo",
+      "backend": "Requires separate backend (pair with another stack)",
+      "database": "SQLite (local) or external API",
+      "deployment": ["Expo EAS", "App Store", "Google Play"],
+      "scales_to": "high",
+      "complexity": "medium"
+    },
+    {
+      "id": "python-fastapi",
+      "name": "Python FastAPI + PostgreSQL",
+      "description": "High-performance Python API backend with automatic OpenAPI docs",
+      "best_for": ["APIs", "microservices", "ML/AI backends", "data-heavy apps"],
+      "languages": ["Python"],
+      "frontend": "None (API only — pair with a frontend stack)",
+      "backend": "FastAPI",
+      "database": "PostgreSQL",
+      "orm": "SQLAlchemy",
+      "deployment": ["Docker", "AWS", "GCP", "Railway"],
+      "scales_to": "very high",
+      "complexity": "medium"
+    },
+    {
+      "id": "node-express-mongo",
+      "name": "Node.js Express + MongoDB",
+      "description": "Flexible Node.js backend with document database",
+      "best_for": ["REST APIs", "real-time apps", "prototypes", "chat apps", "IoT"],
+      "languages": ["TypeScript", "JavaScript"],
+      "frontend": "None (API only — pair with a frontend stack)",
+      "backend": "Express.js",
+      "database": "MongoDB",
+      "orm": "Mongoose",
+      "deployment": ["Docker", "AWS", "Railway", "Render"],
+      "scales_to": "high",
+      "complexity": "low"
+    },
+    {
+      "id": "static-site",
+      "name": "Static Site (HTML/CSS/JS)",
+      "description": "Simple static website with no backend",
+      "best_for": ["landing pages", "portfolios", "documentation sites", "marketing sites"],
+      "languages": ["HTML", "CSS", "JavaScript"],
+      "frontend": "Vanilla HTML/CSS/JS or Tailwind",
+      "backend": "None",
+      "database": "None",
+      "deployment": ["Vercel", "Netlify", "GitHub Pages", "Cloudflare Pages"],
+      "scales_to": "unlimited (static)",
+      "complexity": "low"
+    }
+  ]
+}

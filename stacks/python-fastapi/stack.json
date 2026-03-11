@@ -1,0 +1,23 @@
+{
+  "id": "python-fastapi",
+  "linter": "ruff",
+  "formatter": "ruff format",
+  "type_checker": "mypy",
+  "test_runner": "pytest",
+  "test_framework": "pytest + httpx",
+  "e2e_runner": "pytest",
+  "security_scanner": "pip-audit",
+  "min_coverage": 80,
+  "complexity_threshold": 15,
+  "license_policy": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "PSF"],
+  "package_manager": "pip",
+  "python_version": "3.12",
+  "key_dependencies": [
+    "fastapi", "uvicorn", "sqlalchemy", "alembic",
+    "pydantic", "python-jose", "passlib", "python-dotenv"
+  ],
+  "dev_dependencies": [
+    "pytest", "pytest-cov", "pytest-asyncio",
+    "httpx", "ruff", "mypy", "pip-audit"
+  ]
+}
