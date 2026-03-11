@@ -1,0 +1,23 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "command": "bash .claude/hooks/pre-write.sh",
+        "description": "Gate 1: Pre-write quality check"
+      },
+      {
+        "matcher": "Bash",
+        "command": "bash .claude/hooks/pre-commit.sh",
+        "description": "Gate 3: Pre-commit quality check"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "command": "bash .claude/hooks/post-write.sh",
+        "description": "Gate 2: Post-write quality check"
+      }
+    ]
+  }
+}
