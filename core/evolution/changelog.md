@@ -1,5 +1,21 @@
 # Agent-X Changelog
 
+## v1.2.0 — Complete Evolution (All 32 Issues Resolved)
+Final batch: all 10 remaining nice-to-have issues fixed in PR #77.
+
+- Stack ID validation before architecture phase
+- Smoke test templates per stack + mandatory /api/health endpoint
+- .claude/plugins/ directory for future extensibility
+- Database migration workflow docs (Prisma, Alembic, Mongoose)
+- Context limit management guidance for growing projects
+- 23 new deep tests (79 total) covering all 4 gates, CLI, and edge cases
+- Custom rules from profile.json enforced in Gate 2
+- Design spec corrected (snyk → npm audit)
+- Monorepo project support documented with conventions
+- Gate 2 secret detection runs universally (all repos, not just Agent-X projects)
+
+**All 32 evolution issues closed. Zero remaining.**
+
 ## v1.1.0 — First Self-Evolution Release
 Evolution Agent analyzed v1.0.0, identified 32 gaps, fixed 22 across 3 PRs.
 
@@ -31,8 +47,7 @@ Evolution Agent analyzed v1.0.0, identified 32 gaps, fixed 22 across 3 PRs.
 - echo -e replaced with printf
 - Gate 4 uses while-read for filenames
 
-### Remaining (10 open)
-Issues #60, #63, #64, #65, #66, #67, #69, #70, #71, #73
+### Remaining (0 — all resolved in v1.2.0)
 
 ## v1.0.0 — Initial Release
 - CLAUDE.md consciousness with full workflow rules and JARVIS personality
