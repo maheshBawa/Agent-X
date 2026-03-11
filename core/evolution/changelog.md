@@ -1,5 +1,42 @@
 # Agent-X Changelog
 
+## v2.0.0 — Autonomous Loop Engine
+
+Agent-X evolves from reactive tool to autonomous agent. New consciousness documents define the autonomous loop protocol.
+
+### New: Autonomous Loop (`core/autonomy/`)
+- **Loop protocol** (`loop.md`) — 6-stage autonomous cycle: TRIGGER → ASSESS → PLAN → EXECUTE → VERIFY → LEARN
+- **Checkpoint system** (`checkpoints.md`) — 6 checkpoint types: architecture, breaking, ambiguity, deploy, confidence, structural mandatory
+- **Confidence scoring** (`confidence.md`) — 5-factor weighted scoring with calibration via user feedback
+- **Task graph engine** (`task-graph.md`) — DAG-based task decomposition with dependency resolution
+- **Trigger framework** (`triggers.md`) — 6 trigger types: user goal, test failure, gate failure, self-heal, cron, external event
+- **Memory feedback loop** (`feedback.md`) — 5 validation rules: deduplication, conflict detection, source attribution, staleness marking, size limits
+
+### New: Loop State Persistence
+- `.agent-x/loop-state.json` — persisted after every stage transition, enables session resume
+- Rollback protocol — git checkpoints before each EXECUTE, clean revert on failure
+
+### New: Safety Guardrails
+- Max 20 tasks per autonomous run
+- Max 60 minutes per autonomous run
+- Max 3 retries per task
+- Structural mandatory checkpoints (file deletion, CI config, security code, DB migrations)
+- Risk tolerance mapping (low/medium/high → checkpoint sensitivity)
+
+### Modified: Existing Systems
+- `CLAUDE.md` — autonomous mode directives, startup protocol for loop resume
+- `AGENTS.md` — loop-awareness added to Builder, Quality Enforcer, and Evolution Agent roles
+- Templates updated — new projects inherit autonomous capabilities via `agent-x init`
+- `project-state.json` template — v2.0 schema with autonomous_mode field
+
+### New: Cron Health Checks
+- `.agent-x/cron-config.json` — configurable intervals for dependency audit, coverage, security scan
+- `.agent-x/cron-reports/` — timestamped health check output
+
+### Tests
+- New test suite: `tests/test-autonomy.sh` with 40+ assertions covering all 6 consciousness documents, integration points, safety constraints, and template updates
+- All 79 existing tests unaffected
+
 ## v1.2.0 — Complete Evolution (All 32 Issues Resolved)
 Final batch: all 10 remaining nice-to-have issues fixed in PR #77.
 
