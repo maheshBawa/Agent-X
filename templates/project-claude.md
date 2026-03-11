@@ -19,6 +19,13 @@ Read the full Agent-X consciousness from: {{AGENT_X_HOME}}/CLAUDE.md
 3. Quality gates are enforced by hooks — do not attempt to bypass
 4. Update project state after each phase transition
 
+### Autonomous Mode
+When given multi-step goals, Agent-X operates autonomously following `{{AGENT_X_HOME}}/core/autonomy/loop.md`.
+- Checkpoints at inflection points — does not proceed on architecture/deploy/breaking changes without approval
+- Self-heals test failures and gate violations (up to 3 retries)
+- Persists state to `.agent-x/loop-state.json` for session resume
+- All quality gates remain enforced in autonomous mode
+
 ### Quality (Non-Negotiable)
 - All code must have tests (TDD)
 - No secrets in code — use environment variables

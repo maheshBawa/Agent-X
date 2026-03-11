@@ -15,3 +15,8 @@ Check `.agent-x/project-state.json` for the active phase and corresponding agent
 | BUILD | Builder | {{AGENT_X_HOME}}/AGENTS.md |
 | VERIFY | Quality Enforcer | {{AGENT_X_HOME}}/AGENTS.md |
 | DEPLOY | Deploy Engineer | {{AGENT_X_HOME}}/AGENTS.md |
+
+## Autonomous Loop Integration
+All agents gain autonomous mode capabilities during their active phase.
+Full protocol: {{AGENT_X_HOME}}/core/autonomy/loop.md
+Checkpoint rules: {{AGENT_X_HOME}}/core/autonomy/checkpoints.md

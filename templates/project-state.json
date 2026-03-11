@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "2.0.0",
   "project_name": "",
   "agent_x_home": "",
   "current_phase": "INTAKE",
@@ -11,6 +11,8 @@
   "blocked": false,
   "block_reason": null,
   "stack": null,
+  "autonomous_mode": false,
+  "loop_state_file": ".agent-x/loop-state.json",
   "created_at": "",
   "updated_at": ""
 }
