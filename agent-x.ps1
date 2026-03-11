@@ -84,6 +84,61 @@ Thumbs.db
         Write-Host "Run 'claude' to start. Agent-X will take over."
     }
 
+    "update" {
+        # Update hooks, settings, and templates from Agent-X home — preserves project state
+        if (-not (Test-Path "$ProjectDir\.agent-x")) {
+            Write-Host "No Agent-X project found. Run 'agent-x init' first."
+            exit 1
+        }
+
+        $Version = Get-Content "$AgentXHome\VERSION" -ErrorAction SilentlyContinue
+        if (-not $Version) { $Version = "unknown" }
+        Write-Host "Updating project to Agent-X v$($Version.Trim())..."
+
+        # Update hooks
+        New-Item -ItemType Directory -Path "$ProjectDir\.claude\hooks" -Force | Out-Null
+        Copy-Item "$AgentXHome\.claude\hooks\*" "$ProjectDir\.claude\hooks\" -Force
+        Write-Host "  ✓ Hooks updated" -ForegroundColor Green
+
+        # Update settings
+        Copy-Item "$AgentXHome\.claude\settings.json" "$ProjectDir\.claude\settings.json" -Force
+        Write-Host "  ✓ Settings updated" -ForegroundColor Green
+
+        # Update CLAUDE.md (back up existing)
+        if (Test-Path "$ProjectDir\CLAUDE.md") {
+            Copy-Item "$ProjectDir\CLAUDE.md" "$ProjectDir\CLAUDE.md.backup"
+        }
+        $claudeContent = Get-Content "$AgentXHome\templates\project-claude.md" -Raw
+        $claudeContent = $claudeContent.Replace('{{AGENT_X_HOME}}', $AgentXHome.Replace('\', '/'))
+        Set-Content "$ProjectDir\CLAUDE.md" $claudeContent
+        Write-Host "  ✓ CLAUDE.md updated (previous backed up)" -ForegroundColor Green
+
+        # Update AGENTS.md (back up existing)
+        if (Test-Path "$ProjectDir\AGENTS.md") {
+            Copy-Item "$ProjectDir\AGENTS.md" "$ProjectDir\AGENTS.md.backup"
+        }
+        $agentsContent = Get-Content "$AgentXHome\templates\project-agents.md" -Raw
+        $agentsContent = $agentsContent.Replace('{{AGENT_X_HOME}}', $AgentXHome.Replace('\', '/'))
+        Set-Content "$ProjectDir\AGENTS.md" $agentsContent
+        Write-Host "  ✓ AGENTS.md updated (previous backed up)" -ForegroundColor Green
+
+        # Update agent_x_home in project state
+        $stateFile = "$ProjectDir\.agent-x\project-state.json"
+        if (Test-Path $stateFile) {
+            $state = Get-Content $stateFile | ConvertFrom-Json
+            $state.agent_x_home = $AgentXHome.Replace('\', '/')
+            $state.updated_at = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+            $state | ConvertTo-Json -Depth 3 | Set-Content $stateFile
+        }
+
+        Write-Host ""
+        Write-Host "============================================" -ForegroundColor Cyan
+        Write-Host "  Agent-X updated to v$($Version.Trim())" -ForegroundColor Cyan
+        Write-Host "============================================" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "Project state, build progress, and .agent-x/ docs preserved."
+    }
+
     "reset" {
         $stateFile = "$ProjectDir\.agent-x\project-state.json"
         $targetPhase = if ($args.Count -gt 0) { $args[0] } else { "INTAKE" }
@@ -129,6 +184,7 @@ Thumbs.db
         Write-Host ""
         Write-Host "Commands:"
         Write-Host "  init              Initialize Agent-X in the current directory"
+        Write-Host "  update            Update hooks, settings, and templates from Agent-X repo"
         Write-Host "  status            Show project status"
         Write-Host "  reset [PHASE]     Reset project to a specific phase (default: INTAKE)"
         Write-Host "  version           Show Agent-X version"
