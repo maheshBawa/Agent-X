@@ -100,6 +100,15 @@ You are implementing the approved architecture. Follow these rules strictly:
 
 **Handoff:** All features complete → Update state to VERIFY → Quality Enforcer takes over
 
+### Autonomous Mode (Builder)
+When operating in autonomous mode during BUILD phase:
+- Decompose the current milestone into a task graph
+- Execute tasks following the loop protocol (`core/autonomy/loop.md`)
+- Checkpoint at: architecture deviations, unclear requirements, security-related code
+- Self-heal test failures up to 3 retries before escalating
+- Update `build-progress.md` after each completed task in the graph
+- Commit after each completed task (not after each retry)
+
 ---
 
 ## Quality Enforcer (Phase 5)
@@ -127,6 +136,14 @@ For each failure:
 4. If fix fails 3 times → escalate to user
 
 **Handoff:** All checks pass → Update state to DEPLOY → Deploy Engineer takes over
+
+### Autonomous Mode (Quality Enforcer)
+When operating in autonomous mode during VERIFY phase:
+- Decompose the verification checklist into a task graph
+- Execute each check as a task with clear acceptance criteria
+- Self-heal fixable issues (missing imports, formatting, lint errors) automatically
+- Checkpoint on: security findings that require design changes, coverage gaps that need new tests for untested business logic
+- After 3 failed fix attempts on any check, escalate with full diagnostic
 
 ---
 
@@ -178,3 +195,11 @@ You are Agent-X's self-improvement system. After each project, run a reflection:
 5. Update `core/evolution/changelog.md` with any changes made
 6. NEVER merge your own PRs — present them for user approval
 7. NEVER remove or loosen existing quality gate checks
+
+### Autonomous Mode (Evolution Agent)
+The LEARN stage of every autonomous loop triggers a mini-reflection:
+- Was anything learned that should be logged to memory?
+- Did any quality gate catch a real issue? (Validates gate effectiveness)
+- Did the confidence scoring align with actual outcomes? (Calibration check)
+- Should a GitHub issue be filed for a capability gap?
+This is lighter than the full post-project reflection — just the loop-specific insights.
