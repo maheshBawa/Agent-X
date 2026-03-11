@@ -179,6 +179,88 @@ GITIGNORE
     fi
     ;;
 
+  dev)
+    # Activate JARVIS inside the Agent-X repo for dogfooding
+    if [ "$PROJECT_DIR" != "$AGENT_X_HOME" ]; then
+      echo "'agent-x dev' is only for use inside the Agent-X repo."
+      echo "For other projects, use 'agent-x init'."
+      exit 1
+    fi
+
+    # Back up existing CLAUDE.md if it's not already an Agent-X consciousness file
+    if [ -f "$PROJECT_DIR/CLAUDE.md" ]; then
+      cp "$PROJECT_DIR/CLAUDE.md" "$PROJECT_DIR/CLAUDE.md.backup"
+    fi
+
+    # Install Agent-X consciousness
+    sed "s|{{AGENT_X_HOME}}|$AGENT_X_HOME|g" "$AGENT_X_HOME/templates/project-claude.md" > "$PROJECT_DIR/CLAUDE.md"
+
+    # Install AGENTS.md
+    if [ -f "$PROJECT_DIR/AGENTS.md" ]; then
+      cp "$PROJECT_DIR/AGENTS.md" "$PROJECT_DIR/AGENTS.md.backup"
+    fi
+    sed "s|{{AGENT_X_HOME}}|$AGENT_X_HOME|g" "$AGENT_X_HOME/templates/project-agents.md" > "$PROJECT_DIR/AGENTS.md"
+
+    # Set up .agent-x state at BUILD phase (skip intake — Agent-X is already built)
+    mkdir -p "$PROJECT_DIR/.agent-x"
+    if [ ! -f "$PROJECT_DIR/.agent-x/project-state.json" ]; then
+      cp "$AGENT_X_HOME/templates/project-state.json" "$PROJECT_DIR/.agent-x/project-state.json"
+    fi
+    TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+    STATE_FILE="$PROJECT_DIR/.agent-x/project-state.json"
+    sed \
+      -e "s|\"project_name\": \"[^\"]*\"|\"project_name\": \"Agent-X\"|" \
+      -e "s|\"agent_x_home\": \"[^\"]*\"|\"agent_x_home\": \"$AGENT_X_HOME\"|" \
+      -e "s|\"current_phase\": \"[^\"]*\"|\"current_phase\": \"BUILD\"|" \
+      -e "s|\"phase_status\": \"[^\"]*\"|\"phase_status\": \"in_progress\"|" \
+      -e "s|\"updated_at\": \"[^\"]*\"|\"updated_at\": \"$TIMESTAMP\"|" \
+      "$STATE_FILE" > "$STATE_FILE.tmp" && mv "$STATE_FILE.tmp" "$STATE_FILE"
+
+    # Hooks and settings are already in place (we're in the Agent-X repo)
+    chmod +x "$PROJECT_DIR/.claude/hooks/"*.sh 2>/dev/null || true
+
+    echo ""
+    echo "============================================"
+    echo "  JARVIS activated (dev mode)"
+    echo "============================================"
+    echo ""
+    echo "Quality gates and JARVIS personality are now active."
+    echo "Run 'claude' to start. Use 'agent-x raw' to switch back."
+    ;;
+
+  raw)
+    # Deactivate JARVIS — restore raw Claude
+    if [ "$PROJECT_DIR" != "$AGENT_X_HOME" ]; then
+      echo "'agent-x raw' is only for use inside the Agent-X repo."
+      echo "In other projects, Agent-X is always active."
+      exit 1
+    fi
+
+    # Restore original CLAUDE.md from backup
+    if [ -f "$PROJECT_DIR/CLAUDE.md.backup" ]; then
+      mv "$PROJECT_DIR/CLAUDE.md.backup" "$PROJECT_DIR/CLAUDE.md"
+    else
+      rm -f "$PROJECT_DIR/CLAUDE.md"
+    fi
+
+    # Restore original AGENTS.md from backup
+    if [ -f "$PROJECT_DIR/AGENTS.md.backup" ]; then
+      mv "$PROJECT_DIR/AGENTS.md.backup" "$PROJECT_DIR/AGENTS.md"
+    else
+      rm -f "$PROJECT_DIR/AGENTS.md"
+    fi
+
+    # Remove .agent-x state (factory doesn't need project state)
+    rm -rf "$PROJECT_DIR/.agent-x"
+
+    echo ""
+    echo "============================================"
+    echo "  Raw Claude restored"
+    echo "============================================"
+    echo ""
+    echo "JARVIS deactivated. Run 'claude' for vanilla Claude."
+    ;;
+
   version)
     VERSION=$(cat "$AGENT_X_HOME/VERSION" 2>/dev/null || echo "unknown")
     echo "Agent-X v$VERSION"
@@ -194,6 +276,8 @@ GITIGNORE
     echo "  update            Update hooks, settings, and templates from Agent-X repo"
     echo "  status            Show project status"
     echo "  reset [PHASE]     Reset project to a specific phase (default: INTAKE)"
+    echo "  dev               Activate JARVIS inside the Agent-X repo (dogfooding)"
+    echo "  raw               Deactivate JARVIS, restore raw Claude (Agent-X repo only)"
     echo "  version           Show Agent-X version"
     echo "  help              Show this help message"
     echo ""

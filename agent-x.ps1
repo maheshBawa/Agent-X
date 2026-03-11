@@ -171,6 +171,94 @@ Thumbs.db
         }
     }
 
+    "dev" {
+        # Activate JARVIS inside the Agent-X repo for dogfooding
+        if ($ProjectDir.Path -ne $AgentXHome) {
+            Write-Host "'agent-x dev' is only for use inside the Agent-X repo."
+            Write-Host "For other projects, use 'agent-x init'."
+            exit 1
+        }
+
+        $ProjectRoot = $ProjectDir.Path
+
+        # Back up existing CLAUDE.md
+        if (Test-Path "$ProjectRoot\CLAUDE.md") {
+            Copy-Item "$ProjectRoot\CLAUDE.md" "$ProjectRoot\CLAUDE.md.backup"
+        }
+
+        # Install Agent-X consciousness
+        $claudeContent = Get-Content "$AgentXHome\templates\project-claude.md" -Raw
+        $claudeContent = $claudeContent.Replace('{{AGENT_X_HOME}}', $AgentXHome.Replace('\', '/'))
+        Set-Content "$ProjectRoot\CLAUDE.md" $claudeContent
+
+        # Install AGENTS.md
+        if (Test-Path "$ProjectRoot\AGENTS.md") {
+            Copy-Item "$ProjectRoot\AGENTS.md" "$ProjectRoot\AGENTS.md.backup"
+        }
+        $agentsContent = Get-Content "$AgentXHome\templates\project-agents.md" -Raw
+        $agentsContent = $agentsContent.Replace('{{AGENT_X_HOME}}', $AgentXHome.Replace('\', '/'))
+        Set-Content "$ProjectRoot\AGENTS.md" $agentsContent
+
+        # Set up .agent-x state at BUILD phase (skip intake)
+        New-Item -ItemType Directory -Path "$ProjectRoot\.agent-x" -Force | Out-Null
+        if (-not (Test-Path "$ProjectRoot\.agent-x\project-state.json")) {
+            Copy-Item "$AgentXHome\templates\project-state.json" "$ProjectRoot\.agent-x\project-state.json"
+        }
+        $timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+        $state = Get-Content "$ProjectRoot\.agent-x\project-state.json" | ConvertFrom-Json
+        $state.project_name = "Agent-X"
+        $state.agent_x_home = $AgentXHome.Replace('\', '/')
+        $state.current_phase = "BUILD"
+        $state.phase_status = "in_progress"
+        $state.updated_at = $timestamp
+        $state | ConvertTo-Json -Depth 3 | Set-Content "$ProjectRoot\.agent-x\project-state.json"
+
+        # Hooks and settings are already in place (we're in the Agent-X repo)
+
+        Write-Host ""
+        Write-Host "============================================" -ForegroundColor Cyan
+        Write-Host "  JARVIS activated (dev mode)" -ForegroundColor Cyan
+        Write-Host "============================================" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "Quality gates and JARVIS personality are now active."
+        Write-Host "Run 'claude' to start. Use 'agent-x raw' to switch back."
+    }
+
+    "raw" {
+        # Deactivate JARVIS — restore raw Claude
+        if ($ProjectDir.Path -ne $AgentXHome) {
+            Write-Host "'agent-x raw' is only for use inside the Agent-X repo."
+            Write-Host "In other projects, Agent-X is always active."
+            exit 1
+        }
+
+        $ProjectRoot = $ProjectDir.Path
+
+        # Restore original CLAUDE.md from backup
+        if (Test-Path "$ProjectRoot\CLAUDE.md.backup") {
+            Move-Item "$ProjectRoot\CLAUDE.md.backup" "$ProjectRoot\CLAUDE.md" -Force
+        } else {
+            Remove-Item "$ProjectRoot\CLAUDE.md" -Force -ErrorAction SilentlyContinue
+        }
+
+        # Restore original AGENTS.md from backup
+        if (Test-Path "$ProjectRoot\AGENTS.md.backup") {
+            Move-Item "$ProjectRoot\AGENTS.md.backup" "$ProjectRoot\AGENTS.md" -Force
+        } else {
+            Remove-Item "$ProjectRoot\AGENTS.md" -Force -ErrorAction SilentlyContinue
+        }
+
+        # Remove .agent-x state
+        Remove-Item "$ProjectRoot\.agent-x" -Recurse -Force -ErrorAction SilentlyContinue
+
+        Write-Host ""
+        Write-Host "============================================" -ForegroundColor Cyan
+        Write-Host "  Raw Claude restored" -ForegroundColor Cyan
+        Write-Host "============================================" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "JARVIS deactivated. Run 'claude' for vanilla Claude."
+    }
+
     "version" {
         $Version = Get-Content "$AgentXHome\VERSION" -ErrorAction SilentlyContinue
         if (-not $Version) { $Version = "unknown" }
@@ -187,6 +275,8 @@ Thumbs.db
         Write-Host "  update            Update hooks, settings, and templates from Agent-X repo"
         Write-Host "  status            Show project status"
         Write-Host "  reset [PHASE]     Reset project to a specific phase (default: INTAKE)"
+        Write-Host "  dev               Activate JARVIS inside the Agent-X repo (dogfooding)"
+        Write-Host "  raw               Deactivate JARVIS, restore raw Claude (Agent-X repo only)"
         Write-Host "  version           Show Agent-X version"
         Write-Host "  help              Show this help message"
         Write-Host ""
