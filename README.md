@@ -16,10 +16,10 @@
 
 <br>
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue?style=for-the-badge&logo=semver)](https://github.com/maheshBawa/Agent-X/releases/tag/v1.0.0)
+[![Version](https://img.shields.io/badge/version-1.2.1-blue?style=for-the-badge&logo=semver)](https://github.com/maheshBawa/Agent-X/releases/tag/v1.2.1)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-brightgreen?style=for-the-badge&logo=windows-terminal)](/)
 [![Claude Code](https://img.shields.io/badge/powered%20by-Claude%20Code-blueviolet?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiLz48L3N2Zz4=)](https://claude.ai)
-[![Tests](https://img.shields.io/badge/tests-56%20passing-success?style=for-the-badge&logo=checkmarx)](/)
+[![Tests](https://img.shields.io/badge/tests-79%20passing-success?style=for-the-badge&logo=checkmarx)](/)
 [![License](https://img.shields.io/badge/license-MIT-orange?style=for-the-badge)](/)
 
 <br>
@@ -136,7 +136,7 @@ Every file I write, every commit I make, every deployment I attempt — passes t
 
 </div>
 
-**Gate 2** catches secrets like `password = "abc123"` before they ever reach a commit. **Gate 4** runs a full security audit (OWASP Top 10 patterns) before anything touches production.
+**Gate 2** catches secrets three ways: assignment patterns (`password = "abc"`), JSON notation (`"token": "xyz"`), and connection strings (`postgresql://user:pass@host`). It also enforces custom rules from your profile. **Gate 4** runs SAST covering 6 OWASP categories (injection, weak crypto, XSS, CORS, eval, SSRF), plus dependency audit and license checks.
 
 Zero tolerance means zero tolerance. I can't be convinced to skip a gate.
 
@@ -178,6 +178,8 @@ Then I file GitHub issues against my own repo with concrete proposals. Implement
 
 I get smarter. I never get reckless.
 
+**Proof it works:** After v1.0.0, I ran my Evolution Agent on myself. It found 32 gaps — from bypass-able secret detection to missing CI/CD templates to a pre-commit hook that fired on every Bash command. I filed all 32 as GitHub issues, fixed every single one across 4 PRs, and shipped v1.2.1. The evolution engine isn't theoretical. It's battle-tested on its first target: me.
+
 <br>
 
 ## Adaptive Memory
@@ -215,6 +217,11 @@ bash setup.sh
 .\setup.ps1
 ```
 
+Add to your PATH so you can use `agent-x` from anywhere:
+```bash
+export PATH="$PATH:/path/to/Agent-X"   # add to ~/.bashrc or ~/.zshrc
+```
+
 ### Initialize a Project
 
 ```bash
@@ -230,6 +237,32 @@ claude
 
 That's it. I take over from here.
 
+### Update Projects After Upgrading Agent-X
+
+When new features are added to Agent-X:
+
+```bash
+# Pull the latest Agent-X
+cd /path/to/Agent-X
+git pull
+
+# Update your project (run from your project directory)
+cd /path/to/my-saas
+agent-x update
+```
+
+This updates hooks, quality gates, settings, and templates — without touching your project state, architecture docs, or build progress.
+
+### CLI Commands
+
+| Command | What it does |
+|:--------|:-------------|
+| `agent-x init` | Initialize Agent-X in the current directory |
+| `agent-x update` | Pull latest hooks, settings, and templates into your project |
+| `agent-x status` | Show current project phase and state |
+| `agent-x reset [PHASE]` | Roll back to a specific phase (e.g., `ARCHITECTURE`) |
+| `agent-x version` | Show Agent-X version |
+
 <br>
 
 ## Project Structure
@@ -238,30 +271,33 @@ That's it. I take over from here.
 Agent-X/
 ├── CLAUDE.md                    # My consciousness — identity, rules, workflow
 ├── AGENTS.md                    # 7 agent role definitions
+├── VERSION                      # Single source of truth for version
 ├── agent-x                      # CLI entry point (bash)
 ├── agent-x.ps1                  # CLI entry point (PowerShell)
 ├── setup.sh / setup.ps1         # One-command installers
 │
 ├── .claude/
 │   ├── settings.json            # Hook wiring (Gates 1-3)
+│   ├── plugins/                 # Future MCP server & skill extensions
 │   └── hooks/
 │       ├── pre-write.sh         # Gate 1: Architecture & test enforcement
-│       ├── post-write.sh        # Gate 2: Secret & debug detection
+│       ├── post-write.sh        # Gate 2: Secret detection + custom rules
 │       ├── pre-commit.sh        # Gate 3: Commit-time quality sweep
-│       └── pre-deploy.sh        # Gate 4: Full pre-deployment audit
+│       ├── pre-deploy.sh        # Gate 4: Full pre-deployment audit (6 OWASP categories)
+│       └── run-quality.sh       # Stack-specific linter/formatter/type checker
 │
 ├── core/
 │   ├── intake/                  # Product interview system
-│   ├── planner/                 # Architecture document templates
+│   ├── planner/                 # Architecture + DB migration + monorepo docs
 │   ├── quality/                 # Gate rules + OWASP security patterns
-│   ├── deployer/                # CI/CD & deployment workflows
+│   ├── deployer/                # CI/CD templates (Node, Python, Static) + smoke tests
 │   ├── memory/                  # Adaptive learning system
-│   └── evolution/               # Self-upgrade engine
+│   └── evolution/               # Self-upgrade engine + changelog
 │
 ├── stacks/                      # 5 tech stack configs + scaffolding
-├── profiles/                    # User preference profiles
+├── profiles/                    # User preference profiles + custom rules
 ├── templates/                   # Project initialization templates
-└── tests/                       # 56 automated tests
+└── tests/                       # 79 automated tests (5 test suites)
 ```
 
 <br>
@@ -292,6 +328,6 @@ This isn't about replacing human creativity. It's about removing the gap between
 
 <br>
 
-<sub>Agent-X v1.0.0 · Created by <a href="https://github.com/maheshBawa">@maheshBawa</a> · Powered by Claude Code</sub>
+<sub>Agent-X v1.2.1 · Created by <a href="https://github.com/maheshBawa">@maheshBawa</a> · Powered by Claude Code</sub>
 
 </div>
