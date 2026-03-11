@@ -1,0 +1,24 @@
+{
+  "id": "nextjs-postgres",
+  "linter": "eslint",
+  "linter_config": "next/core-web-vitals, next/typescript",
+  "formatter": "prettier",
+  "type_checker": "typescript",
+  "test_runner": "vitest",
+  "test_framework": "React Testing Library",
+  "e2e_runner": "Playwright",
+  "security_scanner": "npm audit",
+  "min_coverage": 80,
+  "complexity_threshold": 15,
+  "license_policy": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "0BSD"],
+  "package_manager": "npm",
+  "node_version": "20",
+  "key_dependencies": [
+    "next", "react", "react-dom", "typescript",
+    "@prisma/client", "prisma", "zod", "tailwindcss"
+  ],
+  "dev_dependencies": [
+    "vitest", "@testing-library/react", "@testing-library/jest-dom",
+    "playwright", "eslint", "prettier", "@types/react", "@types/node"
+  ]
+}

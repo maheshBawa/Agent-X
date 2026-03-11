@@ -1,0 +1,16 @@
+{
+  "id": "static-site",
+  "linter": "htmlhint",
+  "formatter": "prettier",
+  "type_checker": "none",
+  "test_runner": "none",
+  "test_framework": "none",
+  "e2e_runner": "playwright",
+  "security_scanner": "none",
+  "min_coverage": 0,
+  "complexity_threshold": 15,
+  "license_policy": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "0BSD"],
+  "package_manager": "npm",
+  "key_dependencies": [],
+  "dev_dependencies": ["prettier", "playwright"]
+}

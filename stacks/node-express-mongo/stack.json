@@ -1,0 +1,23 @@
+{
+  "id": "node-express-mongo",
+  "linter": "eslint",
+  "formatter": "prettier",
+  "type_checker": "typescript",
+  "test_runner": "vitest",
+  "test_framework": "supertest",
+  "e2e_runner": "vitest",
+  "security_scanner": "npm audit",
+  "min_coverage": 80,
+  "complexity_threshold": 15,
+  "license_policy": ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "0BSD"],
+  "package_manager": "npm",
+  "node_version": "20",
+  "key_dependencies": [
+    "express", "mongoose", "typescript", "zod",
+    "jsonwebtoken", "bcryptjs", "cors", "helmet", "dotenv"
+  ],
+  "dev_dependencies": [
+    "vitest", "supertest", "eslint", "prettier",
+    "@types/express", "@types/node", "tsx"
+  ]
+}
