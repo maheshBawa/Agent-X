@@ -5,7 +5,13 @@
 set -euo pipefail
 
 TOOL_INPUT=$(cat)
-PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+# Resolve project root from the hook's own location (hooks live at <project>/.claude/hooks/)
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$HOOK_DIR/../.." && pwd)"
+# Fallback to git if hook is piped (no $0 path)
+if [ ! -d "$PROJECT_ROOT/.agent-x" ]; then
+  PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+fi
 ARCH_FILE="$PROJECT_ROOT/.agent-x/architecture.md"
 
 # Skip if no .agent-x directory (not an Agent-X project)
