@@ -79,6 +79,18 @@ Produce this document and save to `.agent-x/architecture.md`:
 [How the app is deployed, infrastructure components]
 ```
 
+## Multi-Stack Projects (Mobile + Backend)
+
+If the stack decision is `react-native-expo`, the mobile app will need a backend API. Handle this as follows:
+
+1. **Recommend a companion backend stack** (typically `python-fastapi` or `node-express-mongo`) during the TECH_STACK phase
+2. **Design both in one architecture document** with clear API contract between mobile and backend
+3. **Structure as a monorepo** with separate directories: `mobile/` and `api/`
+4. **Build the API first** (it defines the contract), then the mobile app
+5. **Each directory gets its own** `package.json` / `requirements.txt`, test config, and CI job
+
+This is a v1 known limitation — Agent-X does not yet support fully independent multi-repo orchestration.
+
 ## Design Principles
 1. **Simplicity:** Fewer components that work well > many thin abstractions
 2. **Security-first:** Every endpoint authenticated unless explicitly public
